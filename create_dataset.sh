@@ -6,7 +6,7 @@ NPROC=$4
 
 
 ROOT_DIR='./'
-DATA_DIR='data_v2'
+DATA_DIR='data'
 TASK='end-to-end'
 
 LOGDIR=$(echo "dataset_${DATASET}__hops_${HOPS}__npaths_${NPATHS}")
