@@ -6,6 +6,8 @@ results/*
 Hands-On
 __pycache__
 .venv
+./data/ml1m/paths_random_walk/*
+./data/lfm1m/paths_random_walk/*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
