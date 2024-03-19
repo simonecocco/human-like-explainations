@@ -3,10 +3,13 @@ This repository contains the source code of the submitted paper "PERLM: Faithful
 Modeling over Knowledge Graphs".
 
 ## Requirements
-- Python 3.8
+This repo requires the creation of a virtual environment. A python version below 3.12 is required.
+
+> This repo was adapted for Python 3.11 - on 19 March 2024.
 
 Install the required packages:
 ```pip install -r requirements.txt```
+> Some packages were adapted compared to original requirements.
 
 Download the datasets and the **embeddings**(to run the plm-rec implementation) from the **data.zip** and **embedding-weights.zip** archive at the drive repository: https://drive.google.com/drive/folders/1e0uFWb6iJ6MXHtslZsqV8qRYC0Pl_AR7?usp=sharing
 Then extract both **data.zip** and **embedding-weights.zip** inside the **top level** of the repository (i.e. the level in which setup.py is located). 
