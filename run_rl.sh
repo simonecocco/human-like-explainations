@@ -1,3 +1,4 @@
+#!/bin/bash
 DEVICE_NUM=$1
 NPROC=6
 

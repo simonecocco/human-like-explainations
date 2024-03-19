@@ -1,3 +1,4 @@
+#!/bin/bash
 DATASET=$1
 NPATHS=$2
 HOPS=$3

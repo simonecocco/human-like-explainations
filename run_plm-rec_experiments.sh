@@ -1,3 +1,4 @@
+#!/bin/bash
 DEVICE_NUM=$1
 NPROC=2
 for MODEL in gpt2@plm-rec  ;

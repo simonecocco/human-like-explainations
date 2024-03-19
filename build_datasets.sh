@@ -1,4 +1,4 @@
-
+#!/bin/bash
 NPROC=2
 for hops in 3 5;
   do

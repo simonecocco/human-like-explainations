@@ -1,3 +1,4 @@
+#!/bin/bash
 DEVICE_NUM=$1
 NPROC=1
 for HOPS in 3 5 ;
