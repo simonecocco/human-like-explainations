@@ -4,7 +4,7 @@ import gzip
 import csv
 import pandas as pd
 
-from pathlm.knowledge_graphs.kg_macros import PRODUCT, MAIN_INTERACTION
+from pathlm.knowledge_graphs.kg_macros import PRODUCT, INTERACTION
 from pathlm.utils import get_data_dir, check_dir, get_model_data_dir
 
 from pathlm.data_mappers.mapper_base import MapperBase
@@ -24,7 +24,7 @@ class MapperCAFE(MapperBase):
         print("Writing split CAFE...")
         self.write_split_CAFE()
         print("Writing UID and PID mappings...")
-        self.mapping_folder = os.path.join(get_model_data_dir(args.model, args.data), "mappings")
+        self.mapping_folder = os.path.join(get_data_dir(args.data), "mapping")
         check_dir(self.mapping_folder)
         self.write_uid_pid_mappings()
 
@@ -53,7 +53,7 @@ class MapperCAFE(MapperBase):
 
     def handle_kg_relations(self):
         # Write new relations
-        new_rid2relation_name = {0: MAIN_INTERACTION[self.dataset_name]}
+        new_rid2relation_name = {0: INTERACTION[self.dataset_name]}
         offset = len(new_rid2relation_name)
         new_rid2relation_name.update({rid + offset: relation_name for rid, relation_name in self.rid2relation_name.items()})
         self.old_rid2new_rid = {rid: rid + offset for rid in self.rid2relation_name.keys()}

@@ -71,9 +71,21 @@ def get_rid_to_name_map(dataset_name: str) -> dict:
 def get_data_dir(dataset_name: str) -> str:
     return join('data', dataset_name, 'preprocessed')
 
+def get_root_data_dir(dataset_name: str) -> str:
+    return join('data', dataset_name)
 
 def get_model_data_dir(model_name: str, dataset_name: str) -> str:
     return join(get_data_dir(dataset_name), model_name)
+
+def get_weight_dir(model_name: str, dataset_name: str) -> str:
+    weight_dir_path = join('weights', dataset_name, model_name)
+    check_dir(weight_dir_path)
+    return weight_dir_path
+
+def get_weight_ckpt_dir(model_name: str, dataset_name: str) -> str:
+    weight_ckpt_dir_path = join(get_weight_dir(model_name, dataset_name), 'ckpt')
+    check_dir(weight_ckpt_dir_path)
+    return weight_ckpt_dir_path
 
 
 def get_eid_to_name_map(dataset_name: str) -> Dict[str, str]:
@@ -84,3 +96,4 @@ def get_eid_to_name_map(dataset_name: str) -> Dict[str, str]:
             eid, name = row[:2]
             eid2name[eid] = ' '.join(name.split('_'))
     return eid2name
+
