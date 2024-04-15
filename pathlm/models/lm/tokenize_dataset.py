@@ -1,7 +1,6 @@
 import argparse
 import os
-import pickle
-from datasets import load_from_disk, DatasetDict, Dataset
+from datasets import DatasetDict
 from tokenizers import (
     models,
     pre_tokenizers,
@@ -9,9 +8,7 @@ from tokenizers import (
     trainers,
     Tokenizer)
 
-from transformers import AutoModelForCausalLM, TrainingArguments, Trainer,\
-    DataCollatorForLanguageModeling, AutoConfig, PreTrainedTokenizerFast, LogitsProcessorList,\
-    set_seed, GPT2LMHeadModel, GPT2Model, EarlyStoppingCallback
+from transformers import PreTrainedTokenizerFast, set_seed
 
 from pathlm.models.lm.path_dataset import PathDataset
 from pathlm.sampling import KGsampler
@@ -24,8 +21,8 @@ def tokenize_function(examples: str, context_length: int = 200):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # Data arguments
-    parser.add_argument("--dataset", type=str, default="ml1m", help="{ml1m, lfm1m}")
-    parser.add_argument("--task", type=str, default="end-to-end", help="{pretrain, end-to-end}")
+    parser.add_argument("--dataset", type=str, default="ml1m", choices=['ml1m', 'lfm1m'], help="Dataset to use")
+    parser.add_argument("--task", type=str, default="end-to-end", choices=['pretrain', 'end-to-end'])
     parser.add_argument("--sample_size", type=str, default="250",
                         help="Number of sampled path in the chosen dataset")
     parser.add_argument("--n_hop", type=int, default=3,
@@ -33,6 +30,11 @@ if __name__ == "__main__":
     parser.add_argument("--context_length", type=int, default=24,
                         help="Context length value when training a tokenizer from scratch")
     parser.add_argument("--nproc", type=int, default=8, help="Number of processes for dataset mapping")
+
+    # polygloss
+    aparse.add_argument('--filled_templates_file', default='filled_templates.txt', type=str, help='Path to the filled template file')
+    aparse.add_argument('--path_file', default='paths_end-to-end_250_3.txt', type=str, help='Path to load paths')
+    aparse.add_argument('--model', default='distilgpt2', type=str, help='Model name from Hugging Face')
 
     args = parser.parse_args()
 
