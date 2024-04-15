@@ -74,6 +74,11 @@ def get_data_dir(dataset_name: str) -> str:
 def get_root_data_dir(dataset_name: str) -> str:
     return join('data', dataset_name)
 
+def get_data_template_dir(dataset_name: str) -> str:
+    data_template_dir_path: str = join(get_root_data_dir(dataset_name), 'templates')
+    check_dir(data_template_dir_path)
+    return data_template_dir_path
+
 def get_model_data_dir(model_name: str, dataset_name: str) -> str:
     return join(get_data_dir(dataset_name), model_name)
 
@@ -97,3 +102,12 @@ def get_eid_to_name_map(dataset_name: str) -> Dict[str, str]:
             eid2name[eid] = ' '.join(name.split('_'))
     return eid2name
 
+def get_raw_paths_dir(dataset_name: str) -> str:
+    raw_paths_dir_path = join(get_root_data_dir(dataset_name), 'raw_paths')
+    check_dir(raw_paths_dir_path)
+    return raw_paths_dir_path
+
+def get_filled_templates_dir(dataset_name: str) -> str:
+    filled_templates_path = join(get_root_data_dir(dataset_name), 'filled_templates')
+    check_dir(filled_templates_path)
+    return filled_templates_path
