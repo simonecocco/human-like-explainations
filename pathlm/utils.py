@@ -116,6 +116,7 @@ def get_filled_templates_dir(dataset_name: str) -> str:
 
 def get_entity_ids_file_path(dataset_name: str, what_type_of_entity: str) -> str:
     mapping_dir_path: str = join(get_root_data_dir(dataset_name), 'preprocessed/mapping')
+    check_dir(mapping_dir_path)
     file_name: str = f'{what_type_of_entity}.txt'
     if exists(join(mapping_dir_path, file_name)):
         return join(mapping_dir_path, file_name)
@@ -132,3 +133,27 @@ def read_entity_ids_file(entity_ids_file_path: str) -> list:
         with open(entity_ids_file_path) as f:
             reader = csv.reader(f, delimiter='\t')
             return [row[1] for row in reader]
+
+def get_tokenizer_dir_path(dataset_name: str, model_name: str, lm_name: str) -> str:
+    tokenizer_dir_path: str = join(get_root_data_dir(dataset_name), 'tokenizers')
+    check_dir(tokenizer_dir_path)
+    lm_tokenizer_dir_path: str = join(tokenizer_dir_path, lm_name)
+    check_dir(lm_tokenizer_dir_path)
+    model_tokenizer_dir_path: str = join(lm_tokenizer_dir_path, model_name)
+    check_dir(model_tokenizer_dir_path)
+    return model_tokenizer_dir_path
+
+def get_tokenized_dataset_dir_path(dataset_name: str, model_name: str, lm_name: str) -> str:
+    tokenized_dataset_dir_path: str = join(get_tokenizer_dir_path(dataset_name, model_name, lm_name), 'tokenized_dataset')
+    check_dir(tokenized_dataset_dir_path)
+    return tokenized_dataset_dir_path
+
+def get_checkpoint_dir_path(lm_name: str, model_name: str) -> str:
+    checkpoint_dir_path: str = join('checkpoints', lm_name, model_name)
+    check_dir(checkpoint_dir_path)
+    return checkpoint_dir_path
+
+def get_model_weights_dir_path(lm_name: str, model_name: str) -> str:
+    model_weights_dir_path: str = join('model_weights', lm_name, model_name)
+    check_dir(model_weights_dir_path)
+    return model_weights_dir_path
