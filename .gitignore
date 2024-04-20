@@ -144,3 +144,5 @@ data/sampled
 data/*/filled_templates
 data/*/paths_random_walk
 data/*/preprocessed/token_index.txt
+data/*/tokenizers
+checkpoints
