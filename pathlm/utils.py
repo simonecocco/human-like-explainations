@@ -1,7 +1,9 @@
 import csv
+from genericpath import exists
 from os.path import join
 import os
 from typing import Dict
+import gzip
 
 SEED = 2023
 
@@ -111,3 +113,22 @@ def get_filled_templates_dir(dataset_name: str) -> str:
     filled_templates_path = join(get_root_data_dir(dataset_name), 'filled_templates')
     check_dir(filled_templates_path)
     return filled_templates_path
+
+def get_entity_ids_file_path(dataset_name: str, what_type_of_entity: str) -> str:
+    mapping_dir_path: str = join(get_root_data_dir(dataset_name), 'preprocessed/mapping')
+    file_name: str = f'{what_type_of_entity}.txt'
+    if exists(join(mapping_dir_path, file_name)):
+        return join(mapping_dir_path, file_name)
+    else:
+        return join(mapping_dir_path, f'{what_type_of_entity}.txt.gz')
+
+def read_entity_ids_file(entity_ids_file_path: str) -> list:
+    entity_ids: dict = {}
+    if entity_ids_file_path.endswith('.gz'):
+        with gzip.open(entity_ids_file_path, 'rt') as f:
+            reader = csv.reader(f, delimiter='\t')
+            return [row[1] for row in reader]
+    else:
+        with open(entity_ids_file_path) as f:
+            reader = csv.reader(f, delimiter='\t')
+            return [row[1] for row in reader]
