@@ -12,6 +12,7 @@ from os.path import exists
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
 import torch
+from pathlm.models.lm.tokenize_dataset import PATTA_LM
 
 def get_training_args_obj(args):
     return TrainingArguments(
@@ -24,13 +25,14 @@ def get_training_args_obj(args):
         save_total_limit=2,
         save_steps=500,
         load_best_model_at_end=True,
-        metric_for_best_model='accuracy',
+        #metric_for_best_model='accuracy',
         greater_is_better=True,
         save_strategy='epoch',
         eval_accumulation_steps=10
     )
 
 def compute_metrics(pred):
+    # https://huggingface.co/docs/transformers/v4.40.0/en/internal/trainer_utils#transformers.EvalPrediction
     loss = pred.loss
     perplexity = torch.exp(loss)
     return {'perplexity': perplexity.item(), 'loss': loss.item()}
@@ -45,26 +47,20 @@ def get_trainer_obj(args, tokenized_dataset, model):
         train_dataset=tokenized_dataset,
         data_collator=data_collator,
         eval_dataset=tokenized_dataset,
-        #compute_metrics=lambda pred: {'accuracy': torch.sum(pred.label_ids == pred.predictions.argmax(-1)).item()}
-        #sol1
-        #compute_metrics=lambda pred: {'accuracy': torch.sum(torch.from_numpy(pred.label_ids) == pred.predictions.argmax(-1)).item()}
-        #sol2
-        #compute_metrics=lambda pred: {'accuracy': torch.sum(torch.tensor(pred.label_ids) == pred.predictions.argmax(-1)).item()}
-        #sol3
-        #compute_metrics=lambda pred: {'accuracy': torch.sum(torch.where(torch.tensor(pred.label_ids) == pred.predictions.argmax(-1), torch.tensor(1), torch.tensor(0))).item()}
-        #sol4
-        compute_metrics=compute_metrics
     )
 
 def train_patta_lm(args, tokenizer, tokenized_dataset):
     model = AutoModelForCausalLM.from_pretrained(args.model)
     model.resize_token_embeddings(len(tokenizer))
-    tokenized_dataset_data_loader = DataLoader(tokenized_dataset, batch_size=16, shuffle=True)
     trainer = get_trainer_obj(args, tokenized_dataset['train'], model)
     trainer.train()
+    print('Model trained')
 
-    weight_path = get_weight_dir(f'patta_{args.epochs}', args.dataset)
+    weight_path = get_weight_dir(f'patta_{args.model}', args.dataset)
     trainer.save_model(weight_path)
+    print(f'Model saved at {weight_path}')
+
+    return model
 
 if __name__ == '__main__':
     parser: ArgumentParser = ArgumentParser()
@@ -74,6 +70,8 @@ if __name__ == '__main__':
                         help='Model name from Hugging Face')
     parser.add_argument('--epochs', type=int, default=3,
                         help='Number of epochs to train the model')
+    parser.add_argument('--eval', type=str,
+                        help='If the model is already trained, evaluate it sending a path')
     args = parser.parse_args()
 
     set_seed(SEED)
@@ -86,5 +84,18 @@ if __name__ == '__main__':
     print('Tokenized dataset loaded')
     tokenizer_file_path: str = join(get_tokenizer_dir_path(args.dataset, args.model, 'patta'), 'tokenizer')
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_file_path, max_length=512, padding='max_length', truncation=True)
-    #tokenized_dataset = tokenized_dataset.map(lambda x: )
-    train_patta_lm(args, tokenizer, tokenized_dataset)
+    weight_path = get_weight_dir(f'patta_{args.model}', args.dataset)
+    if exists(weight_path):
+        model = AutoModelForCausalLM.from_pretrained(weight_path)
+    else: 
+        model = train_patta_lm(args, tokenizer, tokenized_dataset)
+
+    # TODO la generazione di sequenze non funziona
+    if args.eval is not None:
+        sequence_to_generate = f"{PATTA_LM['special_tokens']['start_rec_token']} {args.eval} {PATTA_LM['special_tokens']['end_rec_token']} {PATTA_LM['special_tokens']['start_exp_token']}  {PATTA_LM['special_tokens']['end_exp_token']}"
+        print(f'Generating sequence: {sequence_to_generate}')
+        input_ids = tokenizer.encode(sequence_to_generate, return_tensors='pt')
+        output = model(input_ids)
+        token_ids = torch.argmax(output.logits, dim=2)
+        generated_text = tokenizer.decode(token_ids[0], skip_special_tokens=True)
+        print(f'Generated text: {generated_text}')
