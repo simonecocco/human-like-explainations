@@ -1,8 +1,9 @@
 from argparse import ArgumentParser
 from random import choice
-from pathlm.utils import get_data_template_dir, get_filled_templates_dir, get_raw_paths_dir
+from pathlm.utils import *
 from os.path import join, exists
 from re import compile, finditer
+from pathlm.knowledge_graphs.kg_macros import ENTITY_LIST
 
 TAGS = {
     '<pi>': 'pi',
@@ -11,6 +12,8 @@ TAGS = {
     '<type of entity>': 'te',
     '<relation>': 're'
 }
+
+entities_ids: dict = {}
 
 def fill_template(template_row_and_tags: list[tuple], path: str) -> str:
     template_row: list = list(template_row_and_tags[0])
@@ -22,7 +25,15 @@ def fill_template(template_row_and_tags: list[tuple], path: str) -> str:
     return ''.join(template_row)
 
 def get_type_of_entity(entity: str) -> str:
-    return 'USER' if entity[0] == 'U' else 'ENTITY' # TODO
+    if entity[0] == 'U':
+        return 'USER'
+    else:
+        for entity_name, entity_ids in entities_ids.items():
+            entity_num: str = entity[1:]
+            if entity_num in entity_ids:
+                return entity_name.upper()
+        else:
+            return 'ENTITY'
 
 def explode_relation(relation_text: str) -> dict:
     return {
@@ -66,6 +77,14 @@ if __name__ == '__main__':
         print(f'Error: {blank_template_file_path} does not exist')
         exit(1)
 
+    print('Reading entities ids...')
+
+    current_entities_for_dataset: list = ENTITY_LIST[args.dataset_name]
+    for current_entity in current_entities_for_dataset:
+        entity_ids_file_path: str = get_entity_ids_file_path(args.dataset_name, current_entity)
+        ids_of_entities: list = read_entity_ids_file(entity_ids_file_path)
+        entities_ids.update({current_entity: ids_of_entities})
+
     with open(blank_template_file_path) as template_file:
         blank_template_rows: list = template_file.readlines()
 
@@ -81,7 +100,7 @@ if __name__ == '__main__':
         raw_paths_rows: list = raw_paths_file.readlines()
 
     processed_paths_rows: list[tuple] = [
-        (explode_relation(exploded_relation := row.strip().split(' ')), ''.join(exploded_relation[:2]+[exploded_relation[-1]]))
+        (explode_relation(exploded_relation := row.strip().split(' ')), ' '.join(exploded_relation[:2]+[exploded_relation[-1]]))
         for row in raw_paths_rows[:args.max_path]
     ]
 
@@ -92,9 +111,9 @@ if __name__ == '__main__':
     
     filled_template_file_path: str = join(get_filled_templates_dir(args.dataset_name), args.filled_template_file_name)
     with open(filled_template_file_path, 'w') as filled_template_file_obj:
-        filled_template_file_obj.writelines([
+        filled_template_file_obj.write('\n'.join([
             f'<start_rec> {line[1].strip()} <end_rec> <start_exp> {line[0].strip()[1:-1]} <end_exp>'
             for line in filled_template_rows
-        ])
+        ]))
 
     print(f'Saved successfully on {filled_template_file_path}!')
