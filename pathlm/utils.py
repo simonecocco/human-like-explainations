@@ -103,7 +103,7 @@ def get_eid_to_name_map(dataset_name: str) -> Dict[str, str]:
     return eid2name
 
 def get_raw_paths_dir(dataset_name: str) -> str:
-    raw_paths_dir_path = join(get_root_data_dir(dataset_name), 'raw_paths')
+    raw_paths_dir_path = join(get_root_data_dir(dataset_name), 'paths_random_walk')
     check_dir(raw_paths_dir_path)
     return raw_paths_dir_path
 
