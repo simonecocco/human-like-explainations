@@ -19,7 +19,7 @@ def fill_template(template_row_and_tags: list[tuple], path: str) -> str:
         template_row[tag[1]] = f'<start_{TAGS[tag[0]]}> {path[tag[0]]} <end_{TAGS[tag[0]]}>'
         template_row[tag[1]+1:tag[2]] = [''] * (tag[2] - tag[1] - 1)
 
-    return ' '.join(template_row)
+    return ''.join(template_row)
 
 def get_type_of_entity(entity: str) -> str:
     return 'USER' if entity[0] == 'U' else 'ENTITY' # TODO
@@ -47,11 +47,11 @@ def preprocess_template(template_rows: list) -> list:
 
 if __name__ == '__main__':
     parser: ArgumentParser = ArgumentParser()
-    parser.add_argument('--blank-template-file-path', '-iT', type=str, default='template.txt', required=True,
+    parser.add_argument('--blank-template-file-name', '-iT', type=str, default='template0.txt',
                         help='Path to the blank template file')
-    parser.add_argument('--raw-paths-file-path', '-iP', type=str, required=True,
+    parser.add_argument('--raw-paths-file-name', '-iP', type=str, default='paths_end-to-end_250_3.txt',
                         help='Path to the raw paths file')
-    parser.add_argument('--filled-template-file-path', '-oT', type=str, default='filled_template.txt',
+    parser.add_argument('--filled-template-file-name', '-oT', type=str, default='filled_template.txt',
                         help='Path to the filled template file')
     parser.add_argument('--dataset-name', '-d', type=str, default='ml1m',
                         help='Name of the dataset')
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     template_dir_path: str = get_data_template_dir(args.dataset_name)
-    blank_template_file_path: str = join(template_dir_path, args.blank_template_file_path)
+    blank_template_file_path: str = join(template_dir_path, args.blank_template_file_name)
 
     if not exists(blank_template_file_path):
         print(f'Error: {blank_template_file_path} does not exist')
@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
     preprocessed_template_rows: list = preprocess_template(blank_template_rows)
     raw_paths_dir_path: str = get_raw_paths_dir(args.dataset_name)
-    raw_paths_file_path: str = join(raw_paths_dir_path, args.raw_paths_file_path)
+    raw_paths_file_path: str = join(raw_paths_dir_path, args.raw_paths_file_name)
 
     if not exists(raw_paths_file_path):
         print(f'Error: {raw_paths_file_path} does not exist')
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         raw_paths_rows: list = raw_paths_file.readlines()
 
     processed_paths_rows: list[tuple] = [
-        (explode_relation(exploded_relation := row.strip().split(' ')), ' '.join(row[:2]+[row[-1]]))
+        (explode_relation(exploded_relation := row.strip().split(' ')), ''.join(exploded_relation[:2]+[exploded_relation[-1]]))
         for row in raw_paths_rows[:args.max_path]
     ]
 
@@ -90,9 +90,11 @@ if __name__ == '__main__':
         for row in processed_paths_rows
     ]
     
-    filled_template_file_path: str = join(get_filled_templates_dir(args.dataset_name), args.filled_template_file_path)
+    filled_template_file_path: str = join(get_filled_templates_dir(args.dataset_name), args.filled_template_file_name)
     with open(filled_template_file_path, 'w') as filled_template_file_obj:
         filled_template_file_obj.writelines([
             f'<start_rec> {line[1].strip()} <end_rec> <start_exp> {line[0].strip()[1:-1]} <end_exp>'
             for line in filled_template_rows
         ])
+
+    print(f'Saved successfully on {filled_template_file_path}!')
