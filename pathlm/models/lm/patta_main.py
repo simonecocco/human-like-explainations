@@ -72,6 +72,8 @@ if __name__ == '__main__':
                         help='Number of epochs to train the model')
     parser.add_argument('--eval', type=str,
                         help='If the model is already trained, evaluate it sending a path')
+    parser.add_argument('--force-train', action='store_true',
+                        help='Force the training of the model')
     args = parser.parse_args()
 
     set_seed(SEED)
@@ -85,7 +87,7 @@ if __name__ == '__main__':
     tokenizer_file_path: str = join(get_tokenizer_dir_path(args.dataset, args.model, 'patta'), 'tokenizer')
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_file_path, max_length=512, padding='max_length', truncation=True)
     weight_path = get_weight_dir(f'patta_{args.model}', args.dataset)
-    if exists(weight_path):
+    if exists(weight_path) and not args.force_train:
         model = AutoModelForCausalLM.from_pretrained(weight_path)
     else: 
         model = train_patta_lm(args, tokenizer, tokenized_dataset)
