@@ -5,14 +5,16 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
     TrainingArguments,
-    Trainer,
-    DataCollatorForLanguageModeling
+    DataCollatorForLanguageModeling,
+    LogitsProcessorList
 )
 from os.path import exists
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
 import torch
 from pathlm.models.lm.tokenize_dataset import PATTA_LM
+from pathlm.models.lm.patta_trainer import PattaTrainer
+from pathlm.models.lm.patta_decoding_constraints import PattaLogitsProcessorBPE
 
 def get_training_args_obj(args):
     return TrainingArguments(
@@ -41,12 +43,13 @@ def get_trainer_obj(args, tokenized_dataset, model):
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=False, mlm_probability=0.15
     )
-    return Trainer(
+    return PattaTrainer(
+        tokenizer,
         model=model,
         args=get_training_args_obj(args),
         train_dataset=tokenized_dataset,
         data_collator=data_collator,
-        eval_dataset=tokenized_dataset,
+        eval_dataset=tokenized_dataset
     )
 
 def train_patta_lm(args, tokenizer, tokenized_dataset):
@@ -94,10 +97,16 @@ if __name__ == '__main__':
 
     # TODO la generazione di sequenze non funziona
     if args.eval is not None:
-        sequence_to_generate = f"{PATTA_LM['special_tokens']['start_rec_token']} {args.eval} {PATTA_LM['special_tokens']['end_rec_token']} {PATTA_LM['special_tokens']['start_exp_token']}  {PATTA_LM['special_tokens']['end_exp_token']}"
+        sequence_to_generate = f"{PATTA_LM['special_tokens']['start_rec_token']} {args.eval}"
         print(f'Generating sequence: {sequence_to_generate}')
         input_ids = tokenizer.encode(sequence_to_generate, return_tensors='pt')
-        output = model(input_ids)
-        token_ids = torch.argmax(output.logits, dim=2)
-        generated_text = tokenizer.decode(token_ids[0], skip_special_tokens=True)
+        output = model.generate(
+            input_ids,
+            logits_processor=LogitsProcessorList([
+                PattaLogitsProcessorBPE(256, tokenizer)
+            ])
+        )
+        
+        token_ids = output[0] #torch.argmax(output, dim=2)
+        generated_text = tokenizer.decode(token_ids)
         print(f'Generated text: {generated_text}')
