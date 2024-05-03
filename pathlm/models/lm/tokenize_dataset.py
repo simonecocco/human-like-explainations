@@ -1,6 +1,7 @@
 import argparse
 import os
 from os.path import join
+import token
 from typing_extensions import deprecated
 from datasets import DatasetDict
 from responses import remove
@@ -56,7 +57,7 @@ def extend_tokenizer(tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFa
     tokenizer.add_special_tokens({'pad_token': '[PAD]'}) # TODO !!
     special_tokens: list[AddedToken] = [
         AddedToken(token, single_word=True, lstrip=True, rstrip=True, normalized=False)
-        for token in PATTA_LM["special_tokens"]
+        for token in PATTA_LM["special_tokens"].values()
     ]
     tokenizer.add_special_tokens({'additional_special_tokens': special_tokens}) # type: ignore
     print(f'Adding {len(words)} words')
