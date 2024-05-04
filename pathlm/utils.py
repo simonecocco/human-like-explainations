@@ -82,14 +82,20 @@ def get_data_template_dir(dataset_name: str) -> str:
     return data_template_dir_path
 
 def get_model_data_dir(model_name: str, dataset_name: str) -> str:
+    if '/' in model_name:
+        model_name = model_name.replace('/', '_')
     return join(get_data_dir(dataset_name), model_name)
 
 def get_weight_dir(model_name: str, dataset_name: str) -> str:
+    if '/' in model_name:
+        model_name = model_name.replace('/', '_')
     weight_dir_path = join('weights', dataset_name, model_name)
     check_dir(weight_dir_path)
     return weight_dir_path
 
 def get_weight_ckpt_dir(model_name: str, dataset_name: str) -> str:
+    if '/' in model_name:
+        model_name = model_name.replace('/', '_')
     weight_ckpt_dir_path = join(get_weight_dir(model_name, dataset_name), 'ckpt')
     check_dir(weight_ckpt_dir_path)
     return weight_ckpt_dir_path
@@ -135,6 +141,8 @@ def read_entity_ids_file(entity_ids_file_path: str) -> list:
             return [row[1] for row in reader]
 
 def get_tokenizer_dir_path(dataset_name: str, model_name: str, lm_name: str) -> str:
+    if '/' in model_name:
+        model_name = model_name.replace('/', '_')
     tokenizer_dir_path: str = join(get_root_data_dir(dataset_name), 'tokenizers')
     check_dir(tokenizer_dir_path)
     lm_tokenizer_dir_path: str = join(tokenizer_dir_path, lm_name)
@@ -144,16 +152,22 @@ def get_tokenizer_dir_path(dataset_name: str, model_name: str, lm_name: str) -> 
     return model_tokenizer_dir_path
 
 def get_tokenized_dataset_dir_path(dataset_name: str, model_name: str, lm_name: str) -> str:
+    if '/' in model_name:
+        model_name = model_name.replace('/', '_')
     tokenized_dataset_dir_path: str = join(get_tokenizer_dir_path(dataset_name, model_name, lm_name), 'tokenized_dataset')
     check_dir(tokenized_dataset_dir_path)
     return tokenized_dataset_dir_path
 
 def get_checkpoint_dir_path(lm_name: str, model_name: str) -> str:
+    if '/' in model_name:
+        model_name = model_name.replace('/', '_')
     checkpoint_dir_path: str = join('checkpoints', lm_name, model_name)
     check_dir(checkpoint_dir_path)
     return checkpoint_dir_path
 
 def get_model_weights_dir_path(lm_name: str, model_name: str) -> str:
+    if '/' in model_name:
+        model_name = model_name.replace('/', '_')
     model_weights_dir_path: str = join('model_weights', lm_name, model_name)
     check_dir(model_weights_dir_path)
     return model_weights_dir_path
