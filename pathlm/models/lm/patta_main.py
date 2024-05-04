@@ -8,13 +8,14 @@ from transformers import (
     DataCollatorForLanguageModeling,
     LogitsProcessorList
 )
+from datasets import Dataset
 from os.path import exists
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
 import torch
 from pathlm.models.lm.tokenize_dataset import PATTA_LM
 from pathlm.models.lm.patta_trainer import PattaTrainer
-from pathlm.models.lm.patta_decoding_constraints import PattaLogitsProcessorBPE
+from pathlm.models.lm.patta_decoding_constraints import PattaLogitsProcessor
 
 def get_training_args_obj(args):
     return TrainingArguments(
@@ -53,7 +54,7 @@ def get_trainer_obj(args, tokenized_dataset, model):
     )
 
 def train_patta_lm(args, tokenizer, tokenized_dataset):
-    model = AutoModelForCausalLM.from_pretrained(args.model)
+    model = AutoModelForCausalLM.from_pretrained(args.model, trust_remote_code=True)
     model.resize_token_embeddings(len(tokenizer))
     trainer = get_trainer_obj(args, tokenized_dataset['train'], model)
     trainer.train()
@@ -86,9 +87,8 @@ if __name__ == '__main__':
         print('Run the tokenization script first')
         exit(1)
     tokenized_dataset = load_from_disk(tokenized_dataset_path)
-    print('Tokenized dataset loaded')
     tokenizer_file_path: str = join(get_tokenizer_dir_path(args.dataset, args.model, 'patta'), 'tokenizer')
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_file_path, max_length=512, padding='max_length', truncation=True)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_file_path, max_length=512, padding='max_length', truncation=True, trust_remote_code=True)
     weight_path = get_weight_dir(f'patta_{args.model}', args.dataset)
     if exists(weight_path) and not args.force_train:
         model = AutoModelForCausalLM.from_pretrained(weight_path)
@@ -99,12 +99,14 @@ if __name__ == '__main__':
     if args.eval is not None:
         sequence_to_generate = f"{PATTA_LM['special_tokens']['start_rec_token']} {args.eval}"
         print(f'Generating sequence: {sequence_to_generate}')
-        input_ids = tokenizer.encode(sequence_to_generate, return_tensors='pt')
+        max_token: int = 128
+        tokenized_input = tokenizer(sequence_to_generate, padding=True, truncation=True, max_length=max_token, return_tensors='pt')
         output = model.generate(
-            input_ids,
+            **tokenized_input,
             logits_processor=LogitsProcessorList([
-                PattaLogitsProcessorBPE(256, tokenizer)
-            ])
+                PattaLogitsProcessor(max_token, tokenizer)
+            ]),
+            max_new_tokens=max_token
         )
         
         token_ids = output[0] #torch.argmax(output, dim=2)
