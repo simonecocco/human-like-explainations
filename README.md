@@ -2,6 +2,11 @@
 This repository contains the source code of the submitted paper "PERLM: Faithful Path-Based Explainable Recommendation via Language
 Modeling over Knowledge Graphs".
 
+## Warning!
+This repo also contains another model called Patta. It create an human version of recommendation paths.
+
+For another info you can read [this](./README_Patta.md).
+
 ## Requirements
 This repo requires the creation of a virtual environment. A python version below 3.12 is required.
 
