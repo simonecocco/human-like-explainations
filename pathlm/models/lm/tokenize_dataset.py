@@ -18,7 +18,7 @@ from tokenizers import (
 from typing import Union
 from transformers import PreTrainedTokenizerFast, set_seed, AutoTokenizer, PreTrainedTokenizer
 
-from build.lib.pathlm.utils import get_raw_paths_dir
+from pathlm.utils import get_raw_paths_dir
 from pathlm.models.lm.path_dataset import PathDataset
 from pathlm.sampling import KGsampler
 from pathlm.utils import *
@@ -56,13 +56,13 @@ def extend_tokenizer(tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFa
     print(f'Adding {len(PATTA_LM["special_tokens"])} special tokens')
     tokenizer.add_special_tokens({'pad_token': '[PAD]'}) # TODO !!
     special_tokens: list[AddedToken] = [
-        AddedToken(token, single_word=True, lstrip=True, rstrip=True, normalized=False)
+        AddedToken(token, single_word=True, lstrip=False, rstrip=False, normalized=False)
         for token in PATTA_LM["special_tokens"].values()
     ]
     tokenizer.add_special_tokens({'additional_special_tokens': special_tokens}) # type: ignore
     print(f'Adding {len(words)} words')
     normal_words: list[AddedToken] = [
-        AddedToken(word, single_word=True, lstrip=True, rstrip=True, normalized=False)
+        AddedToken(word, single_word=True, lstrip=False, rstrip=False, normalized=False)
         for word in words
     ]
     tokenizer.add_tokens(normal_words) # type: ignore
@@ -72,7 +72,7 @@ def extend_tokenizer(tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFa
     return tokenizer
 
 def expand_and_save_patta_tokenizer(model: str, word_list: set, tokenizer_file_path: str):
-    tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = AutoTokenizer.from_pretrained(model)
+    tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
     tokenizer = extend_tokenizer(tokenizer, word_list)
     print(f'Saving tokenizer to {tokenizer_file_path}')
     tokenizer.save_pretrained(tokenizer_file_path)
