@@ -95,7 +95,6 @@ if __name__ == '__main__':
     else: 
         model = train_patta_lm(args, tokenizer, tokenized_dataset)
 
-    # TODO la generazione di sequenze non funziona
     if args.eval is not None:
         sequence_to_generate = f"{PATTA_LM['special_tokens']['start_rec_token']} {args.eval}"
         print(f'Generating sequence: {sequence_to_generate}')
@@ -104,11 +103,11 @@ if __name__ == '__main__':
         output = model.generate(
             **tokenized_input,
             logits_processor=LogitsProcessorList([
-                PattaLogitsProcessor(max_token, tokenizer)
+                PattaLogitsProcessor(max_token, tokenizer, args.dataset)
             ]),
             max_new_tokens=max_token
         )
         
-        token_ids = output[0] #torch.argmax(output, dim=2)
+        token_ids = output[0]
         generated_text = tokenizer.decode(token_ids)
         print(f'Generated text: {generated_text}')
