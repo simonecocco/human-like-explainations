@@ -13,7 +13,7 @@ from os.path import exists
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
 import torch
-from pathlm.models.lm.tokenize_dataset import PATTA_LM
+from pathlm.models.lm.tokenize_dataset import PATTA_LM_SPECIAL_TOKENS
 from pathlm.models.lm.patta_trainer import PattaTrainer
 from pathlm.models.lm.patta_decoding_constraints import PattaLogitsProcessor
 
@@ -74,7 +74,7 @@ if __name__ == '__main__':
                         help='Model name from Hugging Face')
     parser.add_argument('--epochs', type=int, default=3,
                         help='Number of epochs to train the model')
-    parser.add_argument('--eval', type=str,
+    parser.add_argument('--eval', type=str, default='U211 R-1',
                         help='If the model is already trained, evaluate it sending a path')
     parser.add_argument('--force-train', action='store_true',
                         help='Force the training of the model')
@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
     try:
         if args.eval is not None:
-            sequence_to_generate = f"{PATTA_LM['special_tokens']['start_rec_token']} {args.eval}"
+            sequence_to_generate = f"<start_{PATTA_LM_SPECIAL_TOKENS[-2]}> {args.eval}"
             print(f'Generating sequence: {sequence_to_generate}')
             max_token: int = args.max_tokens
             tokenized_input = tokenizer(sequence_to_generate, padding=True, truncation=True, max_length=max_token, return_tensors='pt')
