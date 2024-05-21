@@ -78,6 +78,8 @@ if __name__ == '__main__':
                         help='If the model is already trained, evaluate it sending a path')
     parser.add_argument('--force-train', action='store_true',
                         help='Force the training of the model')
+    parser.add_argument('--max-tokens', type=int, default=128,
+                        help='Max number of tokens to generate')
     args = parser.parse_args()
 
     set_seed(SEED)
@@ -95,19 +97,23 @@ if __name__ == '__main__':
     else: 
         model = train_patta_lm(args, tokenizer, tokenized_dataset)
 
-    if args.eval is not None:
-        sequence_to_generate = f"{PATTA_LM['special_tokens']['start_rec_token']} {args.eval}"
-        print(f'Generating sequence: {sequence_to_generate}')
-        max_token: int = 128
-        tokenized_input = tokenizer(sequence_to_generate, padding=True, truncation=True, max_length=max_token, return_tensors='pt')
-        output = model.generate(
-            **tokenized_input,
-            logits_processor=LogitsProcessorList([
-                PattaLogitsProcessor(max_token, tokenizer, args.dataset)
-            ]),
-            max_new_tokens=max_token
-        )
-        
-        token_ids = output[0]
-        generated_text = tokenizer.decode(token_ids)
-        print(f'Generated text: {generated_text}')
+    try:
+        if args.eval is not None:
+            sequence_to_generate = f"{PATTA_LM['special_tokens']['start_rec_token']} {args.eval}"
+            print(f'Generating sequence: {sequence_to_generate}')
+            max_token: int = args.max_tokens
+            tokenized_input = tokenizer(sequence_to_generate, padding=True, truncation=True, max_length=max_token, return_tensors='pt')
+            output = model.generate(
+                **tokenized_input,
+                logits_processor=LogitsProcessorList([
+                    PattaLogitsProcessor(max_token, tokenizer, args.dataset)
+                ]),
+                max_new_tokens=args.max_tokens
+            )
+            
+            token_ids = output[0]
+            generated_text = tokenizer.decode(token_ids)
+            print(f'Generated text: {generated_text}')
+    except KeyboardInterrupt:
+        print('Exiting...')
+        exit(0)
