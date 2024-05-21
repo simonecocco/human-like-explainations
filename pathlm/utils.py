@@ -1,9 +1,11 @@
 import csv
-from genericpath import exists
-from os.path import join
+from functools import cache
+from os.path import join, exists, isfile
 import os
 from typing import Dict
 import gzip
+from json import loads, dumps
+from os import listdir
 
 SEED = 2023
 
@@ -171,3 +173,50 @@ def get_model_weights_dir_path(lm_name: str, model_name: str) -> str:
     model_weights_dir_path: str = join('model_weights', lm_name, model_name)
     check_dir(model_weights_dir_path)
     return model_weights_dir_path
+
+def get_cache_dir() -> str:
+    cache_dir_path: str = '.cache'
+    check_dir(cache_dir_path)
+    return cache_dir_path
+
+class Cache:
+    __slots__: list[str] = [
+        'cache_keys'
+    ]
+
+    def __init__(self):
+        cache_dir: str = get_cache_dir()
+        self.cache_keys: list[str] = [
+            file
+            for file in listdir(cache_dir)
+            if isfile(join(cache_dir, file))
+            if file.endswith('.json')
+        ]
+
+    def __setitem__(self, key: str, value) -> None:
+        cache_file_path: str = join(get_cache_dir(), f'{key}.json')
+        with open(cache_file_path, 'w') as f:
+            f.write(dumps(value))
+
+        self.cache_keys.append(key)
+
+    def __getitem__(self, key: str):
+        cache_file_path: str = join(get_cache_dir(), f'{key}.json')
+        if not exists(cache_file_path):
+            return None
+        with open(cache_file_path, 'r') as f:
+            return loads(f.read())
+        
+    def __delitem__(self, key: str) -> None:
+        cache_file_path: str = join(get_cache_dir(), f'{key}.json')
+        os.remove(cache_file_path)
+        self.cache_keys.remove(key)
+
+    def __contains__(self, key: str) -> bool:
+        return f'{key}.json' in self.cache_keys
+    
+    def __iter__(self):
+        return iter(self.cache_keys)
+    
+    def __len__(self) -> int:
+        return len(self.cache_keys)
