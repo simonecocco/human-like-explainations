@@ -3,7 +3,6 @@ from random import choice
 from pathlm.utils import *
 from os.path import join, exists
 from re import compile, finditer
-from pathlm.knowledge_graphs.kg_macros import ENTITY_LIST
 
 TAGS = {
     '<pi>': 'pi',
@@ -13,7 +12,18 @@ TAGS = {
     '<relation>': 're'
 }
 
-entities_ids: dict = {}
+def fill_entities_ids(dataset_name: str) -> dict:
+    from pathlm.knowledge_graphs.kg_macros import ENTITY_LIST
+    from pathlm.utils import read_entity_ids_file
+    entities_ids_dict: dict = {}
+    current_entities_for_dataset: list = ENTITY_LIST[dataset_name]
+    for current_entity in current_entities_for_dataset:
+        entity_ids_file_path: str = get_entity_ids_file_path(dataset_name, current_entity)
+        ids_of_entities: list = read_entity_ids_file(entity_ids_file_path)
+        entities_ids_dict.update({current_entity: ids_of_entities})
+
+    return entities_ids_dict
+
 
 def fill_template(template_row_and_tags: list[tuple], path: str) -> str:
     template_row: list = list(template_row_and_tags[0])
@@ -24,7 +34,7 @@ def fill_template(template_row_and_tags: list[tuple], path: str) -> str:
 
     return ''.join(template_row)
 
-def get_type_of_entity(entity: str) -> str:
+def get_type_of_entity(entity: str, entities_ids: dict) -> str:
     if entity[0] == 'U':
         return 'USER'
     else:
@@ -35,12 +45,12 @@ def get_type_of_entity(entity: str) -> str:
         else:
             return 'ENTITY'
 
-def explode_relation(relation_text: str) -> dict:
+def explode_relation(relation_text: str, entities_ids) -> dict:
     return {
         '<pi>': relation_text[2],
         '<rp>': relation_text[-1],
         '<shared entity>': relation_text[-3],
-        '<type of entity>': get_type_of_entity(relation_text[-3]),
+        '<type of entity>': get_type_of_entity(relation_text[-3], entities_ids),
         '<relation>': relation_text[-2]
     }
 
@@ -79,11 +89,7 @@ if __name__ == '__main__':
 
     print('Reading entities ids...')
 
-    current_entities_for_dataset: list = ENTITY_LIST[args.dataset_name]
-    for current_entity in current_entities_for_dataset:
-        entity_ids_file_path: str = get_entity_ids_file_path(args.dataset_name, current_entity)
-        ids_of_entities: list = read_entity_ids_file(entity_ids_file_path)
-        entities_ids.update({current_entity: ids_of_entities})
+    entities_ids = fill_entities_ids(args.dataset_name)
 
     with open(blank_template_file_path) as template_file:
         blank_template_rows: list = template_file.readlines()
@@ -100,7 +106,7 @@ if __name__ == '__main__':
         raw_paths_rows: list = raw_paths_file.readlines()
 
     processed_paths_rows: list[tuple] = [
-        (explode_relation(exploded_relation := row.strip().split(' ')), ' '.join(exploded_relation[:2]+[exploded_relation[-1]]))
+        (explode_relation(exploded_relation := row.strip().split(' '), entities_ids), ' '.join(exploded_relation[:2]+[exploded_relation[-1]]))
         for row in raw_paths_rows[:args.max_path]
     ]
 
