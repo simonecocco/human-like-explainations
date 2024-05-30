@@ -8,14 +8,12 @@ from transformers import (
     DataCollatorForLanguageModeling,
     LogitsProcessorList
 )
-from datasets import Dataset
 from os.path import exists
 from datasets import load_from_disk
-from torch.utils.data import DataLoader
 import torch
 from pathlm.models.lm.tokenize_dataset import PATTA_LM_SPECIAL_TOKENS
 from pathlm.models.lm.patta_trainer import PattaTrainer
-from pathlm.models.lm.patta_decoding_constraints import PattaLogitsProcessor
+from pathlm.models.lm.patta_decoding_constraints import *
 
 def get_training_args_obj(args):
     return TrainingArguments(
@@ -74,7 +72,7 @@ if __name__ == '__main__':
                         help='Model name from Hugging Face')
     parser.add_argument('--epochs', type=int, default=3,
                         help='Number of epochs to train the model')
-    parser.add_argument('--eval', type=str, default='U211 R-1',
+    parser.add_argument('--eval', type=str,
                         help='If the model is already trained, evaluate it sending a path')
     parser.add_argument('--force-train', action='store_true',
                         help='Force the training of the model')
@@ -92,8 +90,12 @@ if __name__ == '__main__':
     tokenizer_file_path: str = join(get_tokenizer_dir_path(args.dataset, args.model, 'patta'), 'tokenizer')
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_file_path, max_length=512, padding='max_length', truncation=True, trust_remote_code=True)
     weight_path = get_weight_dir(f'patta_{args.model}', args.dataset)
-    if exists(weight_path) and not args.force_train:
-        model = AutoModelForCausalLM.from_pretrained(weight_path)
+    if args.eval is not None and not args.force_train:
+        try:
+            model = AutoModelForCausalLM.from_pretrained(weight_path)
+        except:
+            print('Be sure to train the model before the use!')
+            exit(0)
     else: 
         model = train_patta_lm(args, tokenizer, tokenized_dataset)
 
@@ -103,9 +105,12 @@ if __name__ == '__main__':
             print(f'Generating sequence: {sequence_to_generate}')
             max_token: int = args.max_tokens
             tokenized_input = tokenizer(sequence_to_generate, padding=True, truncation=True, max_length=max_token, return_tensors='pt')
+            blacklist_logits: BannedTokensLogitsProcessor = BannedTokensLogitsProcessor(tokenizer)
             output = model.generate(
                 **tokenized_input,
                 logits_processor=LogitsProcessorList([
+                    PenalityLogitsProcessor(),
+                    blacklist_logits,
                     PattaLogitsProcessor(max_token, tokenizer, args.dataset)
                 ]),
                 max_new_tokens=args.max_tokens
