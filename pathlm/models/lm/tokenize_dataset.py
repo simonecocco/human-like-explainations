@@ -25,25 +25,14 @@ from pathlm.utils import *
 import pandas as pd
 from datasets import Dataset
 
-PATTA_LM: dict = {
-    'tokenizer_type': 'BPE',
-    'special_tokens': {
-        'start_pi_token':'<start_pi>',
-        'end_pi_token':'<end_pi>',
-        'start_rp_token':'<start_rp>',
-        'end_rp_token':'<end_rp>',
-        'start_se_token':'<start_se>',
-        'end_se_token':'<end_se>',
-        'start_te_token':'<start_te>',
-        'end_te_token':'<end_te>',
-        'start_re_token':'<start_re>',
-        'end_re_token':'<end_re>',
-        'start_rec_token':'<start_rec>',
-        'end_rec_token':'<end_rec>',
-        'start_exp_token':'<start_exp>',
-        'end_exp_token':'<end_exp>',
-    }
-}
+PATTA_LM_SPECIAL_TOKENS: list[str] = ['pi', 'rp', 'se', 'te', 're', 'rec', 'exp']
+
+def expand_patta_special_token(with_prefix: list[str]=['start', 'end']):
+    return [
+        f'<{prefix}_{tok}>'
+        for prefix in with_prefix
+        for tok in PATTA_LM_SPECIAL_TOKENS
+    ]
 
 @deprecated('This function is deprecated. Use get_tokenize_function instead')
 def tokenize_function(examples: str, context_length: int=200):
@@ -53,11 +42,11 @@ def get_tokenize_function(tokenizer, context_length: int=-1):
     return lambda examples: tokenizer(examples['path'], padding=True, truncation=True, max_length=512)
 
 def extend_tokenizer(tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast], words: set) -> Union[PreTrainedTokenizer, PreTrainedTokenizerFast]:
-    print(f'Adding {len(PATTA_LM["special_tokens"])} special tokens')
-    tokenizer.add_special_tokens({'pad_token': '[PAD]'}) # TODO !!
+    print(f'Adding {len(PATTA_LM_SPECIAL_TOKENS) * 2} special tokens')
+    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     special_tokens: list[AddedToken] = [
-        AddedToken(token, single_word=True, lstrip=False, rstrip=False, normalized=False)
-        for token in PATTA_LM["special_tokens"].values()
+        AddedToken(tok, single_word=True, lstrip=False, rstrip=False, normalized=False)
+        for tok in expand_patta_special_token()
     ]
     tokenizer.add_special_tokens({'additional_special_tokens': special_tokens}) # type: ignore
     print(f'Adding {len(words)} words')
