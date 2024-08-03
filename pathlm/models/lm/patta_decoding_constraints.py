@@ -1,11 +1,9 @@
-from html import entities
 from transformers import LogitsProcessor
-from string import ascii_uppercase
 from math import exp, inf
 import torch
 from pathlm.datasets import fill_template
 from pathlm.models.lm.tokenize_dataset import expand_patta_special_token
-from pathlm.models.lm.lm_utils import get_user_negatives_and_tokens_ids as token_ids_of_new_products
+from pathlm.models.lm.lm_utils import get_user_negatives, get_user_positives
 import regex as re
 from pathlm.datasets import data_utils
 from pathlm.utils import Cache
@@ -73,8 +71,6 @@ class PattaLogitsProcessor(LogitsProcessor):
         'cache_dict'
     ]
 
-    def load_big_data(self, data_name)
-
     def __init__(self, max_len: int, tokenizer, dataset_name, banned_tokens_lp, **kwargs):
         super().__init__(**kwargs)
         
@@ -109,6 +105,8 @@ class PattaLogitsProcessor(LogitsProcessor):
         else:
             self.store_cache('user_positives', self.persistent_cache[f'{dataset_name}_user_positives'])
             self.store_cache('user_negatives', self.persistent_cache[f'{dataset_name}_user_negatives'])
+
+        self.load_big_data(f'{dataset_name}_user_positives', lambda: )
         self.shared_entity_regex: re.Pattern = re.compile(r'^[UE]\d{1,}')
         self.type_of_entity_regex: re.Pattern = re.compile(r'[A-Z]{1,}')
         self.list_of_tokens = self.tokenizer_obj.get_vocab()
@@ -117,6 +115,14 @@ class PattaLogitsProcessor(LogitsProcessor):
         self.end_special_tokens: list[int] = self.tokenizer_obj.convert_tokens_to_ids(expand_patta_special_token(with_prefix=['end']))
         self.close_token: int = -1
 
+
+    def load_big_data(self, data_name: str, data_loader: callable, alias: str=None) -> None:
+        if not (data_name in self.persistent_cache_storage):
+            data = data_loader()
+            self.cache_dict[data_name if alias is None else alias] = data
+            self.persistent_cache_storage[data_name] = data
+        else:
+            self.cache_dict[data_name if alias is None else alias] = self.persistent_cache_storage[data_name]
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
         return scores
